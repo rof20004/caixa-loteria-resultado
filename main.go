@@ -10,8 +10,17 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	box := packr.NewBox("./pages")
-	mux.Handle("/", http.FileServer(box))
+	staticHandler := http.FileServer(box)
+
+	mux.Handle("/static/", staticHandler)
+	
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "/"
+    staticHandler.ServeHTTP(w, r)
+	})
+
 	mux.HandleFunc("/search", search)
+
 	http.ListenAndServe(":3000", mux)
 }
 
