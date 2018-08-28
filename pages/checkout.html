@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resultados Loteria - CAIXA</title>
+    <link rel="stylesheet" href="/static/css/bulma.min.css">
+    <script src="/static/js/vue.min.js"></script>
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+  <section id="app" class="section" v-cloak>
+    <div class="container">
+      <h1 class="title">
+        Checkout
+      </h1>
+      <p class="subtitle">
+        Por favor, informe o <strong>número do concurso</strong>!
+      </p>
+
+      <form @submit.stop.prevent="pesquisar">
+        <div class="columns">
+          <div class="column is-5">
+            <div class="field">
+              <div class="control has-icons-left">
+                <input ref="concursoRef" class="input" type="text" name="concurso">
+                <span class="icon is-small is-left">
+                  <i class="fas fa-search"></i>
+                </span>
+              </div>
+              <p class="help is-success">Para pesquisar o último concurso não informe parâmetro</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="field">
+          <div class="control">
+            <button type="submit" :class="{ 'button': true, 'is-primary': true, 'is-loading': loading }">Pesquisar</button>
+            <a class="button" @click.stop.prevent="download" v-if="loteria != null && loteria.concurso != null">
+              <span class="icon is-small">
+                <i class="fas fa-download"></i>
+              </span>
+              <span>Download</span>
+            </a>
+          </div>
+        </div>
+      </form>
+
+      <hr>
+
+      <div class="table-container" v-if="loteria != null && loteria.concurso != null">
+        <table class="table is-hoverable is-fullwidth">
+          <thead>
+            <tr>
+              <th>Concurso</th>
+              <th>Data Sorteio</th>
+              <th>1º Dezena</th>
+              <th>2º Dezena</th>
+              <th>3º Dezena</th>
+              <th>4º Dezena</th>
+              <th>5º Dezena</th>
+              <th>6º Dezena</th>
+              <th>Arrecadação Total</th>
+              <th>Ganhadores Sena</th>
+              <th>Cidade</th>
+              <th>UF</th>
+              <th>Rateio Sena</th>
+              <th>Ganhadores Quina</th>
+              <th>Rateio Quina</th>
+              <th>Ganhadores Quadra</th>
+              <th>Rateio Quadra</th>
+              <th>Acumulado</th>
+              <th>Valor Acumulado</th>
+              <th>Estimativa Prêmio</th>
+              <th>Acumulado Mega da Virada</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td v-text="loteria.concurso"></td>
+              <td v-text="loteria.dtinclusao"></td>
+              <td v-text="loteria.primeiraDezena"></td>
+              <td v-text="loteria.segundaDezena"></td>
+              <td v-text="loteria.terceiraDezena"></td>
+              <td v-text="loteria.quartaDezena"></td>
+              <td v-text="loteria.quintaDezena"></td>
+              <td v-text="loteria.sextaDezena"></td>
+              <td v-text="loteria.vr_arrecadado"></td>
+              <td v-text="loteria.ganhadores"></td>
+              
+              <td>
+                <p v-for="(cidade, index) in loteria.cidades" :key="index">
+                  <span v-text="cidade"></span>
+                </p>
+              </td>
+
+              <td>
+                <p v-for="(uf, index) in loteria.ufs" :key="index">
+                  <span v-text="uf"></span>
+                </p>
+              </td>
+              
+              <td v-text="loteria.valor"></td>
+              <td v-text="loteria.ganhadores_quina"></td>
+              <td v-text="loteria.valor_quina"></td>
+              <td v-text="loteria.ganhadores_quadra"></td>
+              <td v-text="loteria.valor_quadra"></td>
+              <td v-text="loteria.acumulado"></td>
+              <td v-text="loteria.valor_acumulado"></td>
+              <td v-text="loteria.vr_estimativa"></td>
+              <td v-text="loteria.vr_acumulado_especial"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <span v-else>Nenhum registro encontrado</span>
+    </div>
+  </section>
+  <script defer src="/static/js/fontawesome.min.js"></script>
+  <script>
+  new Vue({
+    el: '#app',
+
+    data () {
+      return {
+        loteria: {},
+        loading: false
+      }
+    },
+
+    methods: {
+      pesquisar () {
+        this.loading = true
+        const codigoConcurso = this.$refs.concursoRef.value
+        fetch(`http://localhost:3000/search?concurso=${codigoConcurso}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.concurso) {
+              this.buildLoteria(data)
+            }
+          })
+          .catch(error => window.alert(error.message))
+          .then(() => this.loading = false)
+      },
+
+      buildLoteria (data) {
+        this.loteria.concurso = data.concurso
+        this.loteria.dtinclusao = this.$options.filters.date(data.dtinclusao)
+        this.loteria.primeiraDezena = this.$options.filters.dezena(data.resultado, 1)
+        this.loteria.segundaDezena = this.$options.filters.dezena(data.resultado, 2)
+        this.loteria.terceiraDezena = this.$options.filters.dezena(data.resultado, 3)
+        this.loteria.quartaDezena = this.$options.filters.dezena(data.resultado, 4)
+        this.loteria.quintaDezena = this.$options.filters.dezena(data.resultado, 5)
+        this.loteria.sextaDezena = this.$options.filters.dezena(data.resultado, 6)
+        this.loteria.vr_arrecadado = this.$options.filters.currency(data.vr_arrecadado)
+        this.loteria.ganhadores = data.ganhadores
+        this.loteria.cidades = this.buildCidadesGanhadoresRow(data.ganhadoresPorUf)
+        this.loteria.ufs = this.buildUfsGanhadoresRow(data.ganhadoresPorUf)
+        this.loteria.valor = this.$options.filters.currency(data.valor)
+        this.loteria.ganhadores_quina = data.ganhadores_quina
+        this.loteria.valor_quina = this.$options.filters.currency(data.valor_quina)
+        this.loteria.ganhadores_quadra = data.ganhadores_quadra
+        this.loteria.valor_quadra = this.$options.filters.currency(data.valor_quadra)
+        this.loteria.acumulado = data.acumulado != 0 ? 'SIM' : 'NÃO'
+        this.loteria.valor_acumulado = this.$options.filters.currency(data.valor_acumulado)
+        this.loteria.vr_estimativa = this.$options.filters.currency(data.vr_estimativa)
+        this.loteria.vr_acumulado_especial = this.$options.filters.currency(data.vr_acumulado_especial)
+      },
+
+      buildLoteriaLayoutExport () {
+        let exportData = ''
+        const loteria = JSON.parse(JSON.stringify(this.loteria))
+        for (let key in loteria) {
+          if (key === 'cidades' || key === 'ufs' && loteria[key]) {
+            loteria[key].forEach(value => {
+              exportData += value + ','
+            })
+            exportData = exportData.substring(0, exportData.length - 1)
+            exportData += ';'
+          } else if (loteria[key] !== null && typeof loteria[key] !== 'object') {
+            exportData += loteria[key] + ';'
+          }
+        }
+        return exportData
+      },
+
+      buildCidadesGanhadoresRow (ganhadoresPorUf) {
+        let cidades = []
+        if (ganhadoresPorUf) {
+          ganhadoresPorUf.forEach(item => {
+            for (let i = 0; i < item.qtGanhadores; i++) {
+              cidades.push(item.noCidade)
+            }
+          })
+        }
+        return cidades
+      },
+
+      buildUfsGanhadoresRow (ganhadoresPorUf) {
+        let ufs = []
+        if (ganhadoresPorUf) {
+          ganhadoresPorUf.forEach(item => {
+            for (let i = 0; i < item.qtGanhadores; i++) {
+              ufs.push(item.sgUf)
+            }
+          })
+        }
+        return ufs
+      },
+
+      download () {
+        const filename = `resultado_pesquisa_${Date.now()}.txt` 
+        const content = this.buildLoteriaLayoutExport()
+
+        let element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+      }
+    },
+
+    filters: {
+      currency (value) {
+        if (value != null) {
+          return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, currency: 'BRL' })
+        } else {
+          return 0.00.toLocaleString('pt-BR', { minimumFractionDigits: 2, currency: 'BRL' })
+        }
+      },
+
+      date (value) {
+        if (value != null) return new Date(value).toLocaleDateString()
+      },
+
+      dezena (value, position) {
+        if (value) return value.split('-')[position - 1]
+      }
+    }
+  })
+  </script>
+  </body>
+</html>

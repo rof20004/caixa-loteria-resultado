@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
 	"github.com/gobuffalo/packr"
 )
 
@@ -13,10 +14,11 @@ func main() {
 	staticHandler := http.FileServer(box)
 
 	mux.Handle("/static/", staticHandler)
-	
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "/"
-    staticHandler.ServeHTTP(w, r)
+		// Para SPA descomente a linha abaixo
+		// r.URL.Path = "/"
+		staticHandler.ServeHTTP(w, r)
 	})
 
 	mux.HandleFunc("/search", search)
